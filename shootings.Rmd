@@ -1,0 +1,86 @@
+---
+title       : "Fatal Police Shootings: 2015 - 2020"
+subtitle    : 
+author      : "Clay Glad"
+job         : 
+framework   : io2012        # {io2012, html5slides, shower, dzslides, ...}
+highlighter : highlight.js  # {highlight.js, prettify, highlight}
+hitheme     : tomorrow      # 
+widgets     : []            # {mathjax, quiz, bootstrap}
+mode        : selfcontained # {standalone, draft}
+knit        : slidify::knit2slides
+---
+
+<br>  
+The <a href = "https://washingtonpost.com">Washington Post</a> has tracked all 
+fatal police shootings in the US since 2015.  
+On this page you can display this data on a map, filtering for race, age, and
+sex.  
+<br>  
+If you click down on the map to the level of individual shootings, you will see  
+the date and location of the shooting, as well as the name of the victim.  
+<br>  
+The pie chart beneath the map displays what fraction of all fatal shootings were  
+of those victims in the selected filter.  
+<br>  
+Reference: <a href= "https://www.washingtonpost.com/graphics/investigations/police-shootings-database/">Washington Post: Fatal Force</a>  
+Data: <a href = "https://github.com/washingtonpost/data-police-shootings">Washington Post GitHub repository on fatal police shootings</a>
+
+---
+<br><br>  
+The program is written in Shiny R.  
+<br>  
+Leaflet was used to generate the maps and Plotly to plot the pie charts.  
+The tidyverse, data.table, and scales libraries were also used.  
+<br>  
+Filtering the data was achieved by first factorizing the ages into seven  
+distinct categories (under 13, 13-19, 20-29, 30-39, 40-49, 50-59, 60 and  
+over 60). Then the data was twice subsetted: one data set for map generation  
+and the other for plot generation. The code for this appears on the next slide.
+
+
+---
+```{r chunk1, message = FALSE, warning = FALSE, echo = FALSE}
+library(tidyverse)
+library(data.table)
+library(scales)
+library(shiny)
+library(shinythemes)
+library(leaflet)
+library(plotly)
+```
+```{r chunk2, message = FALSE, warning = FALSE}
+shootings = fread("fatal-police-shootings-data.csv")
+shootings = shootings %>%
+        rename(sex = gender) %>%
+        mutate(age = case_when(
+                age < 13 ~ "kid",
+                age > 12 & age < 20 ~ "teen",
+                age > 19 & age < 30 ~ "twenties",
+                age > 29 & age < 40 ~ "thirties",
+                age > 39 & age < 50 ~ "forties",
+                age > 49 & age < 60 ~ "fifties",
+                age >= 60 ~ "senior"))
+
+## Different subsetted data tables for generating the map and the plot
+
+mapShootings = shootings %>%
+        unite("cityState", city:state, sep = ", ") %>%
+        select(name, date, age, sex, race, cityState, longitude, 
+               latitude)
+
+plotShootings = shootings %>%
+        select(age, sex, race)
+```
+
+--- 
+
+<br><br>  
+The Shiny UI was achieved by using radio buttons for the filtering factors.  
+<br> 
+The main panel takes three outputs: the Leaflet-generated map, text determined  
+by both values from the data set and canned responses, and finally the  
+Plotly-generated pie chart.  
+<br>  
+If no filters are selected, no plot is generated and the explantory text  
+that appears on first loading is reloaded.
