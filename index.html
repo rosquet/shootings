@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fatal Police Shootings: 2015 - 2020</title>
+  <meta charset="utf-8">
+  <meta name="description" content="Fatal Police Shootings: 2015 - 2020">
+  <meta name="author" content="Clay Glad">
+  <meta name="generator" content="slidify" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/default.css" media="all" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/phone.css" 
+    media="only screen and (max-device-width: 480px)" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/slidify.css" >
+  <link rel="stylesheet" href="libraries/highlighters/highlight.js/css/tomorrow.css" />
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->  
+  
+  <!-- Grab CDN jQuery, fall back to local if offline -->
+  <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.min.js"></script>
+  <script>window.jQuery || document.write('<script src="libraries/widgets/quiz/js/jquery.js"><\/script>')</script> 
+  <script data-main="libraries/frameworks/io2012/js/slides" 
+    src="libraries/frameworks/io2012/js/require-1.0.8.min.js">
+  </script>
+  
+  
+
+</head>
+<body style="opacity: 0">
+  <slides class="layout-widescreen">
+    
+    <!-- LOGO SLIDE -->
+        <slide class="title-slide segue nobackground">
+  
+  <hgroup class="auto-fadein">
+    <h1>Fatal Police Shootings: 2015 - 2020</h1>
+    <h2></h2>
+    <p>Clay Glad<br/></p>
+  </hgroup>
+  
+  <article></article>  
+  
+</slide>
+    
+
+    <!-- SLIDES -->
+    <slide class="" id="slide-1" style="background:;">
+  
+  <article data-timings="">
+    <p><br><br>
+The <a href = "https://washingtonpost.com">Washington Post</a> has tracked all 
+fatal police shootings in the US since 2015.<br>
+On this page you can display this data on a map, filtering for race, age, and
+sex.<br>
+<br><br>
+If you click down on the map to the level of individual shootings, you will see<br>
+the date and location of the shooting, as well as the name of the victim.<br>
+<br><br>
+The pie chart beneath the map displays what fraction of all fatal shootings were<br>
+of those victims in the selected filter.<br>
+<br><br>
+Reference: <a href= "https://www.washingtonpost.com/graphics/investigations/police-shootings-database/">Washington Post: Fatal Force</a><br>
+Data: <a href = "https://github.com/washingtonpost/data-police-shootings">Washington Post GitHub repository on fatal police shootings</a></p>
+
+  </article>
+  <!-- Presenter Notes -->
+  
+</slide>
+
+<slide class="" id="slide-2" style="background:;">
+  
+  <article data-timings="">
+    <p><br><br><br>
+The program is written in Shiny R.<br>
+<br><br>
+Leaflet was used to generate the maps and Plotly to plot the pie charts.<br>
+The tidyverse, data.table, and scales libraries were also used.<br>
+<br><br>
+Filtering the data was achieved by first factorizing the ages into seven<br>
+distinct categories (under 13, 13-19, 20-29, 30-39, 40-49, 50-59, 60 and<br>
+over 60). Then the data was twice subsetted: one data set for map generation<br>
+and the other for plot generation. The code for this appears on the next slide.</p>
+
+  </article>
+  <!-- Presenter Notes -->
+  
+</slide>
+
+<slide class="" id="slide-3" style="background:;">
+  
+  <article data-timings="">
+    <pre><code class="r">shootings = fread(&quot;fatal-police-shootings-data.csv&quot;)
+</code></pre>
+
+<pre><code>## Error in fread(&quot;fatal-police-shootings-data.csv&quot;): File &#39;fatal-police-shootings-data.csv&#39; does not exist or is non-readable. getwd()==&#39;/home/clay/Skole/JHU_Data_Science/Developing_Data_Products/Week_4_project/shootings&#39;
+</code></pre>
+
+<pre><code class="r">shootings = shootings %&gt;%
+        rename(sex = gender) %&gt;%
+        mutate(age = case_when(
+                age &lt; 13 ~ &quot;kid&quot;,
+                age &gt; 12 &amp; age &lt; 20 ~ &quot;teen&quot;,
+                age &gt; 19 &amp; age &lt; 30 ~ &quot;twenties&quot;,
+                age &gt; 29 &amp; age &lt; 40 ~ &quot;thirties&quot;,
+                age &gt; 39 &amp; age &lt; 50 ~ &quot;forties&quot;,
+                age &gt; 49 &amp; age &lt; 60 ~ &quot;fifties&quot;,
+                age &gt;= 60 ~ &quot;senior&quot;))
+</code></pre>
+
+<pre><code>## Error in eval(lhs, parent, parent): object &#39;shootings&#39; not found
+</code></pre>
+
+<pre><code class="r">## Different subsetted data tables for generating the map and the plot
+
+mapShootings = shootings %&gt;%
+        unite(&quot;cityState&quot;, city:state, sep = &quot;, &quot;) %&gt;%
+        select(name, date, age, sex, race, cityState, longitude, 
+               latitude)
+</code></pre>
+
+<pre><code>## Error in eval(lhs, parent, parent): object &#39;shootings&#39; not found
+</code></pre>
+
+<pre><code class="r">plotShootings = shootings %&gt;%
+        select(age, sex, race)
+</code></pre>
+
+<pre><code>## Error in eval(lhs, parent, parent): object &#39;shootings&#39; not found
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+  
+</slide>
+
+<slide class="" id="slide-4" style="background:;">
+  
+  <article data-timings="">
+    <p><br><br><br>
+The Shiny UI was achieved by using radio buttons for the filtering factors.<br>
+<br> 
+The main panel takes three outputs: the Leaflet-generated map, text determined<br>
+by both values from the data set and canned responses, and finally the<br>
+Plotly-generated pie chart.<br>
+<br><br>
+If no filters are selected, no plot is generated and the explantory text<br>
+that appears on first loading is reloaded.</p>
+
+  </article>
+  <!-- Presenter Notes -->
+  
+</slide>
+
+    <slide class="backdrop"></slide>
+  </slides>
+  <div class="pagination pagination-small" id='io2012-ptoc' style="display:none;">
+    <ul>
+      
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=1 title='NA'>
+         1
+      </a>
+    </li>
+    
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=2 title='NA'>
+         2
+      </a>
+    </li>
+    
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=3 title='NA'>
+         3
+      </a>
+    </li>
+    
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=4 title='NA'>
+         4
+      </a>
+    </li>
+    
+    </ul>
+  </div>  <!--[if IE]>
+    <script 
+      src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js">  
+    </script>
+    <script>CFInstall.check({mode: 'overlay'});</script>
+  <![endif]-->
+</body>
+  <!-- Load Javascripts for Widgets -->
+  
+  <!-- LOAD HIGHLIGHTER JS FILES -->
+  <script src="libraries/highlighters/highlight.js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <!-- DONE LOADING HIGHLIGHTER JS FILES -->
+   
+  </html>
